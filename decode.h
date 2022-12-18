@@ -9,7 +9,6 @@ void dec_inst(u32 instruction){
     if((instruction & DataProcess_eigen) >> 25 == 0 || (instruction & DataProcess_eigen) >> 25 == 1){
         printf("Data Process Metch\n");
         if(((instruction >> 20) & 0x1) == 0){
-            printf("range:%d\n",(instruction >> 21) & 0xf);
             if((((instruction >> 21) & 0xf) < 12) && (((instruction >> 21) & 0xf) > 7)){
                 printf("PSR\n");
                 Arm_PSRTransfer(ArmPSRTransfDec(instruction));
@@ -19,11 +18,11 @@ void dec_inst(u32 instruction){
         else{Arm_DataProc(ArmDataProcDec(instruction));}
 
     }
-    /*
-    if(instruction & DataProcess_eigen == 0x2000000){
-        Arm_dataprocess(instruction);
+    if((instruction & Multiply_eigen) == 0x90){
+        //MUL, MLA
+        Arm_Mul(ArmMultiDec(instruction));
     }
-    else if(instruction & Multiply_eigen == 0x90)Arm_mutiply(instruction);
+    /*
     else if(instruction & MutiplyLong_eigen == 0x800090)Arm_mutiplylong(instruction);
     else if(instruction & SingleDataSwap_eigen == 0x1000090)Arm_singledataswap(instruction);
     else if(instruction & BranchAndExchange_eigen == 0x12fff10)Arm_branchandexchange(instruction);

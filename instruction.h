@@ -1,6 +1,7 @@
 struct Arm_Branch Branch_inst;
 struct Arm_DataProcess DataPro_inst;
 struct Arm_PSRTransf PSRTransf_inst;
+struct Arm_Multiply Multi_inst;
 
 extern struct arm7tdmi cpu;
 
@@ -33,6 +34,17 @@ struct Arm_PSRTransf ArmPSRTransfDec(u32 instruction){
     return PSRTransf_inst;
 }
 
+struct Arm_Multiply ArmMultiDec(u32 instruction){
+    Multi_inst.cond = (instruction >> 28) & 0xf;
+    Multi_inst.eigen = (instruction >> 22) & 0x3f;
+    Multi_inst.A = (instruction >> 21) & 0x1;
+    Multi_inst.S = (instruction >> 20) & 0x1;
+    Multi_inst.Rd = (instruction >> 16) & 0xf;
+    Multi_inst.Rn = (instruction >> 12) & 0xf;
+    Multi_inst.Rs = (instruction >> 8) & 0xf;
+    Multi_inst.eigen2 = (instruction >> 4) & 0xf;
+    Multi_inst.Rm = (instruction) & 0xf;
+}
 //struct Arm_
 
 //done
@@ -250,6 +262,18 @@ void Arm_PSRTransfer(struct Arm_PSRTransf instruction){
             cpu.CPSR = S_op;
         }
     }
+}
+
+void Arm_Mul(struct Arm_Multiply instruction){
+    if(instruction.A == 0){
+        //MUL
+        cpu.reg[instruction.Rd] = (cpu.reg[instruction.Rm] * cpu.reg[instruction.Rs]) & 0xffffffff;
+    }
+    else{
+        //MLA
+        cpu.reg[instruction.Rd] = (cpu.reg[instruction.Rm] * cpu.reg[instruction.Rs] + cpu.reg[instruction.Rn]) & 0xffffffff;
+    }
+    //lack cspr update
 }
 /*
 void Arm_BX(struct ArmBranchAndExchange instruction, struct arm7tdmi CPU){
