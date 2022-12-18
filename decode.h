@@ -8,7 +8,16 @@ void dec_inst(u32 instruction){
     }
     if((instruction & DataProcess_eigen) >> 25 == 0 || (instruction & DataProcess_eigen) >> 25 == 1){
         printf("Data Process Metch\n");
-        Arm_DataProc(ArmDataProcDec(instruction));
+        if(((instruction >> 20) & 0x1) == 0){
+            printf("range:%d\n",(instruction >> 21) & 0xf);
+            if((((instruction >> 21) & 0xf) < 12) && (((instruction >> 21) & 0xf) > 7)){
+                printf("PSR\n");
+                Arm_PSRTransfer(ArmPSRTransfDec(instruction));
+            }
+            else{Arm_DataProc(ArmDataProcDec(instruction));}
+        }
+        else{Arm_DataProc(ArmDataProcDec(instruction));}
+
     }
     /*
     if(instruction & DataProcess_eigen == 0x2000000){

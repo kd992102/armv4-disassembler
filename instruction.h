@@ -1,5 +1,6 @@
 struct Arm_Branch Branch_inst;
 struct Arm_DataProcess DataPro_inst;
+struct Arm_PSRTransf PSRTransf_inst;
 
 extern struct arm7tdmi cpu;
 
@@ -21,6 +22,19 @@ struct Arm_DataProcess ArmDataProcDec(u32 instruction){
     DataPro_inst.Operand2 = instruction & 0xfff;
     return DataPro_inst;
 }
+
+struct Arm_PSRTransf ArmPSRTransfDec(u32 instruction){
+    PSRTransf_inst.cond = (instruction >> 28) & 0xf;
+    PSRTransf_inst.eigen = (instruction >> 23) & 0x1f;
+    PSRTransf_inst.P = (instruction >> 22) & 0x1;
+    PSRTransf_inst.eigen2 = (instruction >> 16) & 0x3f;
+    PSRTransf_inst.Rd = (instruction >> 12) & 0xf;
+    PSRTransf_inst.Operand = instruction & 0xfff;
+    return PSRTransf_inst;
+}
+
+//struct Arm_
+
 //done
 i32 CsprUpdate(i32 a, i32 b, i32 result){
     //u8 N = ((cpu.CPSR >> 31) & 0x1);//N:negative
@@ -153,7 +167,7 @@ void Arm_DataProc(struct Arm_DataProcess instruction){
                 break;
             case 4:
                 //ADD
-                printf("Rn:%d, Op2:%d\n", cpu.reg[instruction.Rn],ext_Operand2);
+                //printf("Rn:%d, Op2:%d\n", cpu.reg[instruction.Rn],ext_Operand2);
                 cpu.reg[instruction.Rd] = cpu.reg[instruction.Rn] + ext_Operand2;
                 break;
             case 5:
@@ -204,12 +218,39 @@ void Arm_DataProc(struct Arm_DataProcess instruction){
                 //MVN
                 cpu.reg[instruction.Rd] = !(ext_Operand2);
                 break;
-
         }
     }
     printf("done.\n");
 }
 
+void Arm_PSRTransfer(struct Arm_PSRTransf instruction){
+    int S_op;
+    if((instruction.eigen == 2) && (instruction.eigen2 == 0xf)){
+        //MRS
+        printf("MRS\n");
+        if(instruction.P == 0x1){
+            cpu.reg[instruction.Rd] = cpu.SPSR;
+        }
+        else{
+            printf("cpu.CPSR:%u\n", cpu.CPSR);
+            cpu.reg[instruction.Rd] = cpu.CPSR;
+        }
+    }
+    else if((instruction.eigen2 == 40 | instruction.eigen2 == 41)){
+        //MSR register/immdiate -> PSR bits
+        if(instruction.eigen == 0x2){
+           S_op = ArmImmOperand(instruction.Operand);
+        }
+        else{S_op = cpu.reg[(instruction.Operand & 0xf)];}
+
+        if(instruction.P == 0x1){
+            cpu.SPSR = S_op;
+        }
+        else{
+            cpu.CPSR = S_op;
+        }
+    }
+}
 /*
 void Arm_BX(struct ArmBranchAndExchange instruction, struct arm7tdmi CPU){
 

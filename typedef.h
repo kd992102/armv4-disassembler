@@ -38,6 +38,15 @@ struct Arm_DataProcess{
     u16 Operand2:12;
 };
 
+struct Arm_PSRTransf{
+    u8 cond:4;
+    u8 eigen:5;
+    u8 P:1;
+    u8 eigen2:6;
+    u8 Rd:4;
+    u16 Operand:12;
+};
+
 struct Arm_Multiply{
     u8 cond:4;
     u8 eigen:6;
