@@ -22,6 +22,10 @@ void dec_inst(u32 instruction){
         //MUL, MLA
         Arm_Mul(ArmMultiDec(instruction));
     }
+    if((instruction & MultiLong_inst) == 0x800090){
+        //NULL,MLAL
+        Arm_MulLong(ArmMultLongiDec(instruction));
+    }
     /*
     else if(instruction & MutiplyLong_eigen == 0x800090)Arm_mutiplylong(instruction);
     else if(instruction & SingleDataSwap_eigen == 0x1000090)Arm_singledataswap(instruction);
