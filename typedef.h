@@ -12,13 +12,13 @@ typedef int16_t i16;
 typedef uint8_t u8;
 typedef int8_t i8;
 
-#define DataProcess_eigen 0xe000000
+#define DataProcess_eigen 0xc000000
 #define Multiply_eigen 0xfc000f0
 #define MutiplyLong_eigen 0xf8000f0
 #define SingleDataSwap_eigen 0xfb00ff0
 #define BranchAndExchange_eigen 0xffffff0
-#define HalfwordDataTransferRO_eigen 0xe400f90
-#define HalfwordDataTransferIO_eigen 0xe400090
+#define HalfwordDataTransfer_eigen 0xe000090
+//#define HalfwordDataTransferIO_eigen 0xe400090
 #define SingleDataTransfer_eigen 0xc000000
 #define Undefined_eigen 0xe000010
 #define BlockDataTransfer_eigen 0xe000000
@@ -67,7 +67,7 @@ struct Arm_MultiplyLong{
     u8 S:1;
     u8 RdHi:4;
     u8 RdLo:4;
-    u8 Rn:4;
+    u8 Rs:4;
     u8 eigen2:4;
     u8 Rm:4;
 };
@@ -89,39 +89,22 @@ struct Arm_BranchAndExchange{
     u8 Rn;
 };
 
-struct Arm_HalfwordDataTransferRegisterOffset{
+struct Arm_HalfwordDataTransferOffset{
     u8 cond:4;
     u8 eigen:3;
     u8 P:1;
     u8 U:1;
-    u8 eigen2:1;
+    u8 I:1;
     u8 W:1;
     u8 L:1;
     u8 Rn:4;
     u8 Rd:4;
-    u16 eigen3:5;
+    u8 Hi:4;
+    u8 eigen3:1;
     u8 S:1;
     u8 H:1;
     u8 eigen4:1; //1
     u8 Rm:4;
-};
-
-struct Arm_HalfwordDataTransferImmediateOffset{
-    u8 cond:4;
-    u8 eigen:3;
-    u8 P:1;
-    u8 U:1;
-    u8 eigen2:1;
-    u8 W:1;
-    u8 L:1;
-    u8 Rn:4;
-    u8 Rd:4;
-    u8 offset:4;
-    u8 eigen4:1;
-    u8 S:1;
-    u8 H:1;
-    u8 eigen5:1;
-    u8 offset2:4;
 };
 
 struct Arm_SingleDataTransfer{
@@ -216,8 +199,8 @@ struct arm7tdmi{
     //u32 nptr;
     u32 CPSR;
     u32 SPSR;
-    i32 cache1;
-    i32 cache2;
+    u32 pipeline[3];
+    u32 Mem[32768];
 };
 
 struct gba_rom_header{

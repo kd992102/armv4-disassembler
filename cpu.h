@@ -1,4 +1,5 @@
 u8 IsBranch = 0;
+extern struct arm7tdmi cpu;
 
 void cpu_init(struct arm7tdmi cpu){
     cpu.reg[0] = 0;
@@ -19,10 +20,63 @@ void cpu_init(struct arm7tdmi cpu){
     cpu.reg[15] = 0;
     cpu.CPSR = 0;
     cpu.SPSR = 0;
-    cpu.cache1 = 0;
-    cpu.cache2 = 0;
 }
 
+int chk_cond(u8 cond){
+    u8 N = ((cpu.CPSR >> 31) & 0x1);
+    u8 Z = ((cpu.CPSR >> 30) & 0x1);
+    u8 C = ((cpu.CPSR >> 29) & 0x1);
+    u8 V = ((cpu.CPSR >> 28) & 0x1);
+    switch(cond){
+        case 0:
+            if(Z == 1)return 1;
+            return 0;
+        case 1:
+            if(Z == 0)return 1;
+            return 0;
+        case 2:
+            if(C == 1)return 1;
+            return 0;
+        case 3:
+            if(C == 0)return 1;
+            return 0;
+        case 4:
+            if(N == 1)return 1;
+            return 0;
+        case 5:
+            if(N == 0)return 1;
+            return 0;
+        case 6:
+            if(V == 1)return 1;
+            return 0;
+        case 7:
+            if(V == 0)return 1;
+            return 0;
+        case 8:
+            if(C == 1 && N == 0)return 1;
+            return 0;
+        case 9:
+            if(C == 0 || Z == 1)return 1;
+            return 0;
+        case 10:
+            if(N == V)return 1;
+            return 0;
+        case 11:
+            if(N != V)return 1;
+            return 0;
+        case 12:
+            if((Z == 0) & (N == V))return 1;
+            return 0;
+        case 13:
+            if((Z == 1) | (N != V))return 1;
+            return 0;
+        case 14:
+            return 1;
+        default:
+            return 0;
+    }
+}
+/*
 //read 8 bytes and decode it
 void cpu_prefetch(struct arm7tdmi cpu, u32 *gbarom_buf){
     if(IsBranch){
@@ -37,7 +91,7 @@ void cpu_prefetch(struct arm7tdmi cpu, u32 *gbarom_buf){
     //printf("cache1 : 0x%08x, cache2 : 0x%08x, pc : %d\n", cpu.cache1, cpu.cache2, cpu.pc);
     dec_inst(cpu.cache2);
     //exe_inst(cpu.cache1);
-}
+}*/
 /*
 struct Mem_Map{
     unsigned int bios[0x1000];

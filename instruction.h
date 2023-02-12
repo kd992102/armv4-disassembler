@@ -4,7 +4,7 @@ struct Arm_PSRTransf PSRTransf_inst;
 struct Arm_Multiply Multi_inst;
 struct Arm_MultiplyLong MultiLong_inst;
 struct Arm_SingleDataTransfer SingleDataTrans_inst;
-struct Arm_HalfwordDataTransferRegisterOffset SingleDataTransSign_inst;
+struct Arm_HalfwordDataTransferOffset SingleDataTransSign_inst;
 
 extern struct arm7tdmi cpu;
 
@@ -47,6 +47,7 @@ struct Arm_Multiply ArmMultiDec(u32 instruction){
     Multi_inst.Rs = (instruction >> 8) & 0xf;
     Multi_inst.eigen2 = (instruction >> 4) & 0xf;
     Multi_inst.Rm = (instruction) & 0xf;
+    return Multi_inst;
 }
 
 struct Arm_MultiplyLong ArmMultLongiDec(u32 instruction){
@@ -60,9 +61,10 @@ struct Arm_MultiplyLong ArmMultLongiDec(u32 instruction){
     MultiLong_inst.Rs = (instruction >> 8) & 0xf;
     MultiLong_inst.eigen2 = (instruction >> 4) & 0xf;
     MultiLong_inst.Rm = (instruction) & 0xf;
+    return MultiLong_inst;
 }
 
-struct Arm_SingleDataTransfer SingleDataTransDec(u32 instrcution){
+struct Arm_SingleDataTransfer SingleDataTransDec(u32 instruction){
     SingleDataTrans_inst.cond = (instruction >> 28) & 0xf;
     SingleDataTrans_inst.eigen = (instruction >> 26) & 0x3;
     SingleDataTrans_inst.I = (instruction >> 25) & 0x1;
@@ -74,23 +76,26 @@ struct Arm_SingleDataTransfer SingleDataTransDec(u32 instrcution){
     SingleDataTrans_inst.Rn = (instruction >> 16) & 0xf;
     SingleDataTrans_inst.Rd = (instruction >> 12) & 0xf;
     SingleDataTrans_inst.Offset = (instruction) & 0xfff;
+    return SingleDataTrans_inst;
 }
 
-struct Arm_HalfwordDataTransferRegisterOffset SingleDataTransSignedDec(u32 instrcution){
+struct Arm_HalfwordDataTransferOffset SingleDataTransSignedDec(u32 instruction){
     SingleDataTransSign_inst.cond = (instruction >> 28) & 0xf;
     SingleDataTransSign_inst.eigen = (instruction >> 25) & 0x3;
     SingleDataTransSign_inst.P = (instruction >> 24) & 0x1;
     SingleDataTransSign_inst.U = (instruction >> 23) & 0x1;
-    SingleDataTransSign_inst.eigen2 = (instruction >> 22) & 0x1;
+    SingleDataTransSign_inst.I = (instruction >> 22) & 0x1;
     SingleDataTransSign_inst.W = (instruction >> 21) & 0x1;
     SingleDataTransSign_inst.L = (instruction >> 20) & 0x1;
     SingleDataTransSign_inst.Rn = (instruction >> 16) & 0xf;
     SingleDataTransSign_inst.Rd = (instruction >> 12) & 0xf;
-    SingleDataTransSign_inst.eigen3 = (instruction >> 7) & 0x1f;
+    SingleDataTransSign_inst.Hi = (instruction >> 8) & 0xf;
+    SingleDataTransSign_inst.eigen3 = (instruction >> 7) & 0x1;
     SingleDataTransSign_inst.S = (instruction >> 6) & 0x1;
     SingleDataTransSign_inst.H = (instruction >> 5) & 0x1;
     SingleDataTransSign_inst.eigen4 = (instruction >> 4) & 0x1;
     SingleDataTransSign_inst.Rm = (instruction) & 0xf;
+    return SingleDataTransSign_inst;
 }
 /*struct Arm_HalfwordDataTransferRegisterOffset{
     u8 cond:4;
@@ -326,42 +331,51 @@ void Arm_PSRTransfer(struct Arm_PSRTransf instruction){
         }
     }
 }
-
+//OK
 void Arm_Mul(struct Arm_Multiply instruction){
     if(instruction.A == 0){
         //MUL, multiple
         cpu.reg[instruction.Rd] = (cpu.reg[instruction.Rm] * cpu.reg[instruction.Rs]) & 0xffffffff;
-        if(instruction.S){CsprUpdate(cpu.reg[instruction.Rm], cpu.reg[instruction.Rs], cpu.reg[instruction.Rd]);}
+        if(instruction.S){CsprUpdate(cpu.reg[instruction.Rd]);}
+        printf("MUL R%d,R%d,R%d\n", instruction.Rd, instruction.Rm, instruction.Rs);
     }
     else{
         //MLA,multiple and add
-        cpu.reg[instruction.Rd] = (cpu.reg[instruction.Rm] * cpu.reg[instruction.Rs] & 0xffffffff + cpu.reg[instruction.Rn]) & 0xffffffff;
-        if(instruction.S){CsprUpdate((cpu.reg[instruction.Rm] * cpu.reg[instruction.Rs]) & 0xffffffff, cpu.reg[instruction.Rn], cpu.reg[instruction.Rd]);}
+        cpu.reg[instruction.Rd] = (((cpu.reg[instruction.Rm] * cpu.reg[instruction.Rs]) & 0xffffffff) + cpu.reg[instruction.Rn]) & 0xffffffff;
+        if(instruction.S){CsprUpdate(cpu.reg[instruction.Rd]);}
+        printf("MLA R%d,R%d,R%d,R%d\n", instruction.Rd, instruction.Rm, instruction.Rs, instruction.Rn);
     }
     //lack cspr update
 }
-
-void Arm_MulLong(struct Arm_Multiply instruction){
+//OK
+void Arm_MulLong(struct Arm_MultiplyLong instruction){
+    //printf("Hi:%d, Lo:%d\n", instruction.RdHi, instruction.RdLo);
+    //printf("res:%lld\n", (u64)cpu.reg[instruction.Rm] * cpu.reg[instruction.Rs]);
     if(instruction.A == 0){
         //MUL, multiple
         if(instruction.U){
             cpu.reg[instruction.RdLo] = (u32)(((u64)cpu.reg[instruction.Rm] * (u64)cpu.reg[instruction.Rs]) & 0xffffffff);
-            cpu.reg[instruction.RdHi] = (u32)((((u64)cpu.reg[instruction.Rm] * (u64)cpu.reg[instruction.Rs]) & 0xffffffff00000000) >> 32);
+            cpu.reg[instruction.RdHi] = ((((u64)cpu.reg[instruction.Rm] * (u64)cpu.reg[instruction.Rs]) & 0xffffffff00000000) >> 32);
         }
         else{
             cpu.reg[instruction.RdLo] = (u32)(((i64)cpu.reg[instruction.Rm] * (i64)cpu.reg[instruction.Rs]) & 0xffffffff);
-            cpu.reg[instruction.RdHi] = (u32)((((i64)cpu.reg[instruction.Rm] * (i64)cpu.reg[instruction.Rs]) & 0xffffffff00000000) >> 32);
+            cpu.reg[instruction.RdHi] = ((((i64)cpu.reg[instruction.Rm] * (i64)cpu.reg[instruction.Rs]) & 0xffffffff00000000) >> 32);
         }
     }
     else{
         //MLA,multiple and add
-        if(instruction.U){
-            cpu.reg[instruction.RdLo] = (u32)((((u64)cpu.reg[instruction.Rm] * (u64)cpu.reg[instruction.Rs]) + ((u64)cpu.reg[instruction.RdHi] << 32) + ((u64)cpu.reg[instruction.RdLo])) & 0xffffffff);
-            cpu.reg[instruction.RdHi] = (u32)((((u64)cpu.reg[instruction.Rm] * (u64)cpu.reg[instruction.Rs]) + ((u64)cpu.reg[instruction.RdHi] << 32) + ((u64)cpu.reg[instruction.RdLo])) & 0xffffffff00000000 >> 32);
+        if(instruction.U==0){
+            printf("unsigned\n");
+            printf("Hi:%d,%d, Lo:%d,%d\n", instruction.RdHi,cpu.reg[instruction.RdHi], instruction.RdLo, cpu.reg[instruction.RdLo]);
+            printf("%lld\n", ((u64)cpu.reg[instruction.RdHi] << 32) + ((u64)cpu.reg[instruction.RdLo]));
+            printf("res:%lld\n", (((((u64)cpu.reg[instruction.Rm] * (u64)cpu.reg[instruction.Rs]) + ((u64)cpu.reg[instruction.RdHi] << 32) + ((u64)cpu.reg[instruction.RdLo])) & 0xffffffff00000000) >> 32));
+            cpu.reg[instruction.RdLo] = ((((u64)cpu.reg[instruction.Rm] * (u64)cpu.reg[instruction.Rs]) + ((u64)cpu.reg[instruction.RdHi] << 32) + ((u64)cpu.reg[instruction.RdLo])) & 0xffffffff);
+            cpu.reg[instruction.RdHi] = (((((u64)cpu.reg[instruction.Rm] * (u64)cpu.reg[instruction.Rs]) + ((u64)cpu.reg[instruction.RdHi] << 32) + ((u64)cpu.reg[instruction.RdLo])) & 0xffffffff00000000) >> 32);
         }
         else{
-            cpu.reg[instruction.RdLo] = (u32)((((i64)cpu.reg[instruction.Rm] * (i64)cpu.reg[instruction.Rs]) + ((i64)cpu.reg[instruction.RdHi] << 32) + ((i64)cpu.reg[instruction.RdLo])) & 0xffffffff);
-            cpu.reg[instruction.RdHi] = (u32)((((i64)cpu.reg[instruction.Rm] * (i64)cpu.reg[instruction.Rs]) + ((i64)cpu.reg[instruction.RdHi] << 32) + ((i64)cpu.reg[instruction.RdLo])) & 0xffffffff00000000 >> 32);
+            printf("signed\n");
+            cpu.reg[instruction.RdLo] = ((((i64)cpu.reg[instruction.Rm] * (i64)cpu.reg[instruction.Rs]) + ((i64)cpu.reg[instruction.RdHi] << 32) + ((i64)cpu.reg[instruction.RdLo])) & 0xffffffff);
+            cpu.reg[instruction.RdHi] = (((((i64)cpu.reg[instruction.Rm] * (i64)cpu.reg[instruction.Rs]) + ((i64)cpu.reg[instruction.RdHi] << 32) + ((i64)cpu.reg[instruction.RdLo])) & 0xffffffff00000000) >> 32);
         }
         
     }
@@ -372,7 +386,8 @@ void Arm_MulLong(struct Arm_Multiply instruction){
 void Arm_SDT(struct Arm_SingleDataTransfer instruction){
     u32 Operand = instruction.Offset;
     u32 Mem_addr;
-    if(chk_cond(instruction.cond)){
+    if(1){
+        printf("chk_cond\n");
         //check if I=1, if true, shift the register
         if(instruction.I){
             Operand = ArmImmOperand(instruction.Offset);
@@ -391,47 +406,49 @@ void Arm_SDT(struct Arm_SingleDataTransfer instruction){
         else{
             Mem_addr = cpu.reg[instruction.Rn];
         }
-
+        printf("Offset = %d\n", Operand);
         //STR or LDR
         if(instruction.L){
             //LDR
             if(instruction.B){
-                cpu.reg[instruction.Rd] = Mem[Mem_addr] & 0xff;
+                cpu.reg[instruction.Rd] = cpu.Mem[Mem_addr] & 0xff;
             }
             else{
-                cpu.reg[instruction.Rd] = Mem[Mem_addr];
+                cpu.reg[instruction.Rd] = cpu.Mem[Mem_addr];
+                printf("ldr R%d, [R%d,%d]\n", instruction.Rd, instruction.Rn, Operand);
             }
         }
         else{//STR
             if(instruction.B){
-                Mem[Mem_addr] = cpu.reg[instruction.Rd] & 0xff;
+                cpu.Mem[Mem_addr] = cpu.reg[instruction.Rd] & 0xff;
             }
             else{
-                Mem[Mem_addr] = cpu.reg[instruction.Rd];
+                cpu.Mem[Mem_addr] = cpu.reg[instruction.Rd];
+                printf("sdt R%d, [R%d,%d]\n", instruction.Rd, instruction.Rn, Operand);
             }
         }
         //if P=0, add/sub index after transfer
         if(instruction.P == 0){
             if(instruction.U){
                 Mem_addr = cpu.reg[instruction.Rn] + Operand;
-                if(instruction.W)cpu.reg[instruction.Rn] = Mem_addr;
+                //if(instruction.W)cpu.reg[instruction.Rn] = Mem_addr;
             }
             else{
                 Mem_addr = cpu.reg[instruction.Rn] - Operand;
-                if(instruction.W)cpu.reg[instruction.Rn] = Mem_addr;
+                //if(instruction.W)cpu.reg[instruction.Rn] = Mem_addr;
             }
         }
     }
 }
+
 //signed
-void Arm_SDTS(struct Arm_HalfwordDataTransferRegisterOffset instruction){
+void Arm_SDTS(struct Arm_HalfwordDataTransferOffset instruction){
     u32 Operand = cpu.reg[instruction.Rm];
     u32 Mem_addr;
-    if(chk_cond(instruction.cond)){
+    if(instruction.I)Operand = instruction.Hi << 4 | instruction.Rm;
+    printf("Op:%x\n", Operand);
+    if(1){
         //if P=1, add/sub index first
-        if(instruction.S == 0 && instruction.H == 1){
-            //unsigned halfword
-        }
         if(instruction.P){
             if(instruction.U){
                 Mem_addr = cpu.reg[instruction.Rn] + Operand;
@@ -445,26 +462,45 @@ void Arm_SDTS(struct Arm_HalfwordDataTransferRegisterOffset instruction){
         else{
             Mem_addr = cpu.reg[instruction.Rn];
         }
-
         //STR or LDR
         if(instruction.L){
             //LDR
             if(instruction.S == 0 && instruction.H == 1){//Unsigned Halfword
-                cpu.reg[instruction.Rd] = Mem[Mem_addr] & 0xffff;
+                cpu.reg[instruction.Rd] = cpu.Mem[Mem_addr] & 0xffff;
             }
             else if(instruction.S == 1 && instruction.H == 0){//Signed Byte
-                cpu.reg[instruction.Rd] = Mem[Mem_addr] & 0xff + (Mem[Mem_addr] & 0x);
+                if((cpu.Mem[Mem_addr] >> 7) == 0x1){
+                    //singed
+                    cpu.reg[instruction.Rd] = (cpu.Mem[Mem_addr] & 0xff) | 0xffffff00;
+                }
+                else{
+                    cpu.reg[instruction.Rd] = (cpu.Mem[Mem_addr] & 0xff);
+                }
+            }
+            else if(instruction.S == 1 && instruction.H == 1){//Signed halfword
+                if((cpu.Mem[Mem_addr] >> 14) & 0x1){
+                    //singed
+                    cpu.reg[instruction.Rd] = (cpu.Mem[Mem_addr] & 0xffff) | 0xffff0000;
+                }
+                else{
+                    cpu.reg[instruction.Rd] = (cpu.Mem[Mem_addr] & 0xffff);
+                }
+            }
+        }
+        else{
+            if(instruction.S == 0 && instruction.H == 1){//Unsigned Halfword
+                cpu.Mem[Mem_addr] = cpu.reg[instruction.Rd] & 0xffff;
             }
         }
         //if P=0, add/sub index after transfer
         if(instruction.P == 0){
             if(instruction.U){
                 Mem_addr = cpu.reg[instruction.Rn] + Operand;
-                if(instruction.W)cpu.reg[instruction.Rn] = Mem_addr;
+                //if(instruction.W)cpu.reg[instruction.Rn] = Mem_addr;
             }
             else{
                 Mem_addr = cpu.reg[instruction.Rn] - Operand;
-                if(instruction.W)cpu.reg[instruction.Rn] = Mem_addr;
+                //if(instruction.W)cpu.reg[instruction.Rn] = Mem_addr;
             }
         }
     }
