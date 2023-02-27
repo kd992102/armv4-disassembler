@@ -1,4 +1,3 @@
-u32 offset = 0;
 extern struct arm7tdmi cpu;
 
 void ArmInstDec(u32 instruction){
