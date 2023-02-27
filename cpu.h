@@ -20,6 +20,7 @@ void cpu_init(struct arm7tdmi cpu){
     cpu.reg[15] = 0;
     cpu.CPSR = 0;
     cpu.SPSR = 0;
+    cpu.state = 1;//default decode as Arm
 }
 
 int chk_cond(u8 cond){

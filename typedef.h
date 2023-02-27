@@ -1,8 +1,6 @@
 //rom start at 0x8000000
 #include <stdint.h>
 
-#define CART_BASE_ADDR 0x8000000
-
 typedef uint64_t u64;
 typedef int64_t i64;
 typedef uint32_t u32;
@@ -12,9 +10,10 @@ typedef int16_t i16;
 typedef uint8_t u8;
 typedef int8_t i8;
 
+#define CART_BASE_ADDR 0x8000000
 #define DataProcess_eigen 0xc000000
 #define Multiply_eigen 0xfc000f0
-#define MutiplyLong_eigen 0xf8000f0
+#define MultiplyLong_eigen 0xf8000f0
 #define SingleDataSwap_eigen 0xfb00ff0
 #define BranchAndExchange_eigen 0xffffff0
 #define HalfwordDataTransfer_eigen 0xe000090
@@ -27,6 +26,19 @@ typedef int8_t i8;
 #define CoprocessorDataO_eigen 0xf000010
 #define CoprocessorRegisterT_eigen 0xf000010
 #define SoftwareInterrupt_eigen 0xf000000
+
+//Exception Vectors
+#define __RESET__ 0x00000000
+#define __UNDEFINED__ 0x00000004
+#define __SOFTWARE_INTERRUPT__ 0x00000008
+#define __ABORT_PREFETCH__ 0x0000000C
+#define __ABORT_DATA__ 0x00000010
+#define __RESERVED__ 0x00000014
+#define __IRQ__ 0x00000018
+#define __FIQ__ 0x0000001C
+
+//Address
+#define Base_addr 0x00000000
 
 struct Arm_DataProcess{
     u8 cond:4;
@@ -188,10 +200,9 @@ struct Arm_CoprocessorRegisterTransfer{
 };
 
 struct Arm_SoftwareInterrupt{
-    u8 cond;
-    u8 one;
-    u16 two;
-    u32 three;
+    u8 cond:4;
+    u8 eigen:4;
+    u32 ignored:24;
 };
 
 struct arm7tdmi{
@@ -201,6 +212,7 @@ struct arm7tdmi{
     u32 SPSR;
     u32 pipeline[3];
     u32 Mem[32768];
+    u8 state;
 };
 
 struct gba_rom_header{
@@ -224,3 +236,5 @@ struct gba_rom{
     int FileSize;
     char *FileName;
 };
+
+

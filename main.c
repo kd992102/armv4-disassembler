@@ -3,7 +3,8 @@
 #include "typedef.h"
 #include "cpu.h"
 #include "cart.h"
-#include "instruction.h"
+#include "arm_decode.h"
+#include "arm_instruction.h"
 #include "decode.h"
 #include "ppu.h"
 
@@ -39,7 +40,7 @@ int main(int argc, char *argv[]){
     //u32 code = 0xA0D19FE5;
     //little endian
     u32 code = 0xE1D0B0F0;
-    dec_inst(code);
+    ArmInstDec(code);
     for(int i=0;i < 16;i++){
         printf("cpu.reg[%d] = %x\n", i, cpu.reg[i]);
     }
