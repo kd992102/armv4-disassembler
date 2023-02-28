@@ -1,3 +1,4 @@
+#include <string.h>
 extern struct arm7tdmi cpu;
 
 //done
@@ -75,7 +76,7 @@ u32 ArmImmOp(u16 Immediate){
 }
 
 void ArmBX(struct Arm_BranchAndExchange instruction){
-    if(chk_cond(instruction.cond)){
+    if(1){
         if((cpu.reg[instruction.Rn] & 0x1)){
             cpu.state=0;//change to thumb state
         }
@@ -85,27 +86,26 @@ void ArmBX(struct Arm_BranchAndExchange instruction){
         //jmp
         cpu.reg[14] = cpu.reg[15] + 0x4;
         cpu.reg[15] = cpu.Mem[cpu.reg[instruction.Rn]];
+        printf("BX R%d\n", instruction.Rn);
     }
 }
 //Modified
 void ArmBranch(struct Arm_Branch instruction){
     //chk_cond(instruction->cond, CPU)
-    if(chk_cond(instruction.cond)){
-        i32 offset = instruction.offset << 2;
-        u8 msb=0;
-        while(offset){
-            offset = offset >> 1;
-            msb += 1;
-        }
-        msb = msb - 1;
-        offset = (0x80000000 >> msb) | (instruction.offset << 2);
+    if(1){
+        u32 offset = ((instruction.offset << 2) >> 23) & 1;
+        if(offset)offset = 0xff000000 | (instruction.offset << 2);
+        else{offset = 0x00000000 | (instruction.offset << 2);}
+        //printf(" %08x\n", cpu.reg[15] + offset);
         switch(instruction.L & 0x1){
             case 0:
                 cpu.reg[15] = cpu.reg[15] + offset;
+                printf("B #0x%08x\n", cpu.reg[15]);
                 break;
             case 1:
                 cpu.reg[14] = cpu.reg[15] + 0x4;//Link
                 cpu.reg[15] = cpu.reg[15] + offset;
+                printf("BL #0x%08x\n", cpu.reg[15]);
                 break;
                 /*execute function and return*/
         }
@@ -121,81 +121,116 @@ void ArmDataProc(struct Arm_DataProcess instruction){
             ext_Operand2 = ArmImmOp(instruction.Operand2);
             break;
         case 1:
+            //printf("Imm, Op:%08x, %08x, %d\n", instruction.Operand2, (instruction.Operand2 & 0xff), (31 - (((instruction.Operand2 >> 8) & 0xf) << 1)));
             //operand2 as an immediate value
-            ext_Operand2 = ((instruction.Operand2 & 0xff) >> ((instruction.Operand2 >> 8) & 0xf)) | ((instruction.Operand2 & 0xff) << ((instruction.Operand2 >> 8) & 0xf));
+            //ext_Operand2 = ((instruction.Operand2 & 0xff) >> ((instruction.Operand2 >> 8) & 0xf)) | ((instruction.Operand2 & 0xff) << ((instruction.Operand2 >> 8) & 0xf));
+            ext_Operand2 = (instruction.Operand2 & 0xff) << (32 - (((instruction.Operand2 >> 8) & 0xf) << 1));
             break;
     }
+    //printf("ext_Op2:%08x\n", ext_Operand2);
     //check condition
-    if(chk_cond(instruction.cond)){
+    if(1){
         switch(instruction.Opcode){
             case 0:
                 //AND
                 cpu.reg[instruction.Rd] = cpu.reg[instruction.Rn] & ext_Operand2;
+                if(instruction.eigen)printf("AND R%d, R%d, #0x%08x\n", instruction.Rd, instruction.Rn, ext_Operand2);
+                else{printf("AND R%d, R%d, R%d\n", instruction.Rd, instruction.Rn, instruction.Operand2 & 0xf);}
                 break;
             case 1:
                 //EOR
                 cpu.reg[instruction.Rd] = cpu.reg[instruction.Rn] ^ ext_Operand2;
+                if(instruction.eigen)printf("EOR R%d, R%d, #0x%08x\n", instruction.Rd, instruction.Rn, ext_Operand2);
+                else{printf("EOR R%d, R%d, R%d\n", instruction.Rd, instruction.Rn, instruction.Operand2 & 0xf);}
                 break;
             case 2:
                 //SUB
                 cpu.reg[instruction.Rd] = cpu.reg[instruction.Rn] - ext_Operand2;
+                if(instruction.eigen)printf("SUB R%d, R%d, #0x%08x\n", instruction.Rd, instruction.Rn, ext_Operand2);
+                else{printf("SUB R%d, R%d, R%d\n", instruction.Rd, instruction.Rn, instruction.Operand2 & 0xf);}
                 break;
             case 3:
                 //RSB
                 cpu.reg[instruction.Rd] = ext_Operand2 - cpu.reg[instruction.Rn];
+                if(instruction.eigen)printf("RSB R%d, R%d, #0x%08x\n", instruction.Rd, instruction.Rn, ext_Operand2);
+                else{printf("RSB R%d, R%d, R%d\n", instruction.Rd, instruction.Rn, instruction.Operand2 & 0xf);}
                 break;
             case 4:
                 //ADD
                 //printf("Rn:%d, Op2:%d\n", cpu.reg[instruction.Rn],ext_Operand2);
                 cpu.reg[instruction.Rd] = cpu.reg[instruction.Rn] + ext_Operand2;
+                if(instruction.eigen)printf("ADD R%d, R%d, #0x%08x\n", instruction.Rd, instruction.Rn, ext_Operand2);
+                else{printf("ADD R%d, R%d, R%d\n", instruction.Rd, instruction.Rn, instruction.Operand2 & 0xf);}
                 break;
             case 5:
                 //ADC
                 cpu.reg[instruction.Rd] = cpu.reg[instruction.Rn] + ext_Operand2 + ((cpu.CPSR >> 29) & 0x1);
+                if(instruction.eigen)printf("ADC R%d, R%d, #0x%08x\n", instruction.Rd, instruction.Rn, ext_Operand2);
+                else{printf("ADC R%d, R%d, R%d\n", instruction.Rd, instruction.Rn, instruction.Operand2 & 0xf);}
                 break;
             case 6:
                 //SBC
                 cpu.reg[instruction.Rd] = cpu.reg[instruction.Rn] - ext_Operand2 + ((cpu.CPSR >> 29) & 0x1) - 1;
+                if(instruction.eigen)printf("SBC R%d, R%d, #0x%08x\n", instruction.Rd, instruction.Rn, ext_Operand2);
+                else{printf("SBC R%d, R%d, R%d\n", instruction.Rd, instruction.Rn, instruction.Operand2 & 0xf);}
                 break;
             case 7:
                 //RSC
                 cpu.reg[instruction.Rd] = ext_Operand2 - cpu.reg[instruction.Rn] + ((cpu.CPSR >> 29) & 0x1) - 1;
+                if(instruction.eigen)printf("RSC R%d, R%d, #0x%08x\n", instruction.Rd, instruction.Rn, ext_Operand2);
+                else{printf("RSC R%d, R%d, R%d\n", instruction.Rd, instruction.Rn, instruction.Operand2 & 0xf);}
                 break;
             case 8:
                 //TST
                 result = cpu.reg[instruction.Rn] & ext_Operand2;
                 CsprUpdate(result);
+                if(instruction.eigen)printf("TST R%d, #0x%08x\n", instruction.Rn, ext_Operand2);
+                else{printf("TST R%d, R%d\n", instruction.Rn, instruction.Operand2 & 0xf);}
                 break;
             case 9:
                 //TEQ
                 result = cpu.reg[instruction.Rn] ^ ext_Operand2;
                 CsprUpdate(result);
+                if(instruction.eigen)printf("TEQ R%d, #0x%08x\n", instruction.Rn, ext_Operand2);
+                else{printf("TEQ R%d, R%d\n", instruction.Rn, instruction.Operand2 & 0xf);}
                 break;
             case 10:
                 //CMP
                 result = cpu.reg[instruction.Rn] - ext_Operand2;
                 CsprUpdate(result);
+                if(instruction.eigen)printf("CMP R%d, #0x%08x\n", instruction.Rn, ext_Operand2);
+                else{printf("CMP R%d, R%d\n", instruction.Rn, instruction.Operand2 & 0xf);}
                 break;
             case 11:
                 //CMN
                 result = cpu.reg[instruction.Rn] + ext_Operand2;
                 CsprUpdate(result);
+                if(instruction.eigen)printf("CMN R%d, #0x%08x\n", instruction.Rn, ext_Operand2);
+                else{printf("CMN R%d, R%d\n", instruction.Rn, instruction.Operand2 & 0xf);}
                 break;
             case 12:
                 //ORR
                 cpu.reg[instruction.Rd] = cpu.reg[instruction.Rn] | ext_Operand2;
+                if(instruction.eigen)printf("ORR R%d, R%d, #0x%08x\n", instruction.Rd, instruction.Rn, ext_Operand2);
+                else{printf("ORR R%d, R%d, R%d\n", instruction.Rd, instruction.Rn, instruction.Operand2 & 0xf);}
                 break;
             case 13:
                 //MOV
                 cpu.reg[instruction.Rd] = ext_Operand2;
+                if(instruction.eigen)printf("MOV R%d, #0x%08x\n", instruction.Rd, ext_Operand2);
+                else{printf("MOV R%d, R%d\n", instruction.Rd, instruction.Operand2 & 0xf);}
                 break;
             case 14:
                 //BIC
                 cpu.reg[instruction.Rd] = cpu.reg[instruction.Rn] & !(ext_Operand2);
+                if(instruction.eigen)printf("BIC R%d, R%d, #0x%08x\n", instruction.Rd, instruction.Rn, ext_Operand2);
+                else{printf("BIC R%d, R%d, R%d\n", instruction.Rd, instruction.Rn, instruction.Operand2 & 0xf);}
                 break;
             case 15:
                 //MVN
                 cpu.reg[instruction.Rd] = !(ext_Operand2);
+                if(instruction.eigen)printf("MVN R%d, #0x%08x\n", instruction.Rd, ext_Operand2);
+                else{printf("MVN R%d, R%d\n", instruction.Rd, instruction.Operand2 & 0xf);}
                 break;
         }
     }
@@ -275,11 +310,14 @@ void ArmMULL(struct Arm_MultiplyLong instruction){
 void ArmSDT(struct Arm_SingleDataTransfer instruction){
     u32 Operand = instruction.Offset;
     u32 Mem_addr;
-    if(chk_cond(instruction.cond)){
+    if(1){
+        //puts("chk");
         //check if I=1, if true, shift the register
         if(instruction.I){
+            //puts("Imm");
             Operand = ArmImmOp(instruction.Offset);
         }
+        //puts("chk");
         //if P=1, add/sub index first
         if(instruction.P){
             if(instruction.U){
@@ -294,7 +332,9 @@ void ArmSDT(struct Arm_SingleDataTransfer instruction){
         else{
             Mem_addr = cpu.reg[instruction.Rn];
         }
+        //puts("chk");
         //STR or LDR
+        printf("Mem addr : %08x, Op:%08x, Rd:%d, Rn:%d\n", Mem_addr, Operand, instruction.Rd, instruction.Rn);
         if(instruction.L){
             //LDR
             if(instruction.B){
@@ -312,6 +352,7 @@ void ArmSDT(struct Arm_SingleDataTransfer instruction){
                 cpu.Mem[Mem_addr] = cpu.reg[instruction.Rd];
             }
         }
+        //puts("chk");
         //if P=0, add/sub index after transfer
         if(instruction.P == 0){
             if(instruction.U){
@@ -331,7 +372,7 @@ void ArmSDTS(struct Arm_HalfwordDataTransferOffset instruction){
     u32 Operand = cpu.reg[instruction.Rm];
     u32 Mem_addr;
     if(instruction.I)Operand = instruction.Hi << 4 | instruction.Rm;
-    if(chk_cond(instruction.cond)){
+    if(1){
         //if P=1, add/sub index first
         if(instruction.P){
             if(instruction.U){
@@ -395,7 +436,7 @@ void ArmBDT(struct Arm_BlockDataTransfer instruction){
     u8 *RegList;
     u32 ptr;
     RegList = malloc(sizeof(u8));
-    if(chk_cond(instruction.cond)){
+    if(1){
         for(int i=0;i<16;i++){
             if((instruction.RegisterList >> i) & 0x1){
                 *RegList = i;
@@ -456,7 +497,7 @@ void ArmBDT(struct Arm_BlockDataTransfer instruction){
 }
 
 void ArmSWP(struct Arm_SingleDataSwap instruction){
-    if(chk_cond(instruction.cond)){
+    if(1){
         if(instruction.B){
             cpu.reg[instruction.Rd] = cpu.Mem[cpu.reg[instruction.Rn]] & 0xff;
             cpu.Mem[cpu.reg[instruction.Rn]] = cpu.reg[instruction.Rm] & 0xff;
@@ -469,7 +510,7 @@ void ArmSWP(struct Arm_SingleDataSwap instruction){
 }
 
 void ArmSWI(struct Arm_SoftwareInterrupt instruction){
-    if(chk_cond(instruction.cond)){
+    if(1){
         cpu.reg[14] = cpu.reg[15] + 0x4;//store next instruction addr
         cpu.SPSR = cpu.CPSR;//store User mode
         cpu.reg[15] = Base_addr + 0x8;//Program Counter point to SWI offset in vector table
@@ -478,7 +519,7 @@ void ArmSWI(struct Arm_SoftwareInterrupt instruction){
 }
 
 void ArmUDF(struct Arm_Undefined instruction){
-    if(chk_cond(instruction.cond)){
+    if(1){
         printf("Undefined\n");
     }
 }

@@ -211,7 +211,7 @@ struct arm7tdmi{
     u32 CPSR;
     u32 SPSR;
     u32 pipeline[3];
-    u32 Mem[32768];
+    u8 Mem[0x4000];
     u8 state;
 };
 
