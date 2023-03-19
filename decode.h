@@ -1,5 +1,3 @@
-extern struct arm7tdmi cpu;
-
 void ArmInstDec(u32 instruction){
     if(((instruction >> 26) & 0x3) == 0){
         if((instruction & BranchAndExchange_eigen) == 0x12fff10){
@@ -23,7 +21,8 @@ void ArmInstDec(u32 instruction){
             //puts("SDTS");
         }
         else{
-            ArmDataProc(ArmDataProcDec(instruction));
+            if((instruction & 0x1900000) == 0x1000000)ArmPSRT(ArmDataProcDec(instruction));
+            else{ArmDataProc(ArmDataProcDec(instruction));}
             //puts("DataProc");
         }
     }

@@ -21,7 +21,8 @@ struct Arm_Branch ArmBranchDec(u32 instruction){
 
 struct Arm_DataProcess ArmDataProcDec(u32 instruction){
     DataPro_inst.cond = (instruction >> 28) & 0xf;
-    DataPro_inst.eigen = (instruction >> 25) & 0x7;
+    DataPro_inst.eigen = (instruction >> 26) & 0x3;
+    DataPro_inst.I = (instruction >> 25) & 0x1;
     DataPro_inst.Opcode = (instruction >> 21) & 0xf;
     DataPro_inst.S = (instruction >> 20) & 0x1;
     DataPro_inst.Rn = (instruction >> 16) & 0xf;
