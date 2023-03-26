@@ -60,6 +60,9 @@ typedef int8_t i8;
 //Address
 #define Base_addr 0x00000000
 
+u8 cpu_mode = 1;//arm mode
+u8 cpu_read_offset = 4;//arm mode, 4byte
+
 static char swi_func[0x2B][0x20] = {
     "SoftReset\0",
     "RegisterRamReset\0",
@@ -132,6 +135,18 @@ static char addr_mode[8][3] = {
 
 static char addr_mode_stack[8][3] = {
     "ED\0", "EA\0", "FD\0", "FA\0", "FA\0", "FD\0", "EA\0", "ED\0"
+};
+
+static char th_mcas[4][4] = {
+    "MOV\0", "CMP\0", "ADD\0", "SUB\0"
+};
+
+static char th_opcode[16][4] = {
+    "AND\0","EOR\0","LSL\0","LSR\0","ASR\0","ADC\0","SBC\0","ROR\0","TST\0","NEG\0","CMP\0","CMN\0","ORR\0","MUL\0","BIC\0","MVN\0"
+};
+
+static char th_bxcode[4][4] = {
+    "ADD\0", "CMP\0", "MOV\0", "BX\0"
 };
 
 struct Arm_DataProcess{
@@ -308,7 +323,7 @@ struct Thumb_MVReg{
     u8 Offset:5;
     u8 Rs:3;
     u8 Rd:3;
-}
+};
 
 struct Thumb_AS{
     u8 eigen:5;
@@ -317,21 +332,21 @@ struct Thumb_AS{
     u8 Rn:3;
     u8 Rs:3;
     u8 Rd:3;
-}
+};
 
 struct Thumb_Imm{
     u8 eigen:3;
     u8 Op:2;
     u8 Rd:3;
     u8 Offset:8;
-}
+};
 
 struct Thumb_ALU{
     u8 eigen:6;
     u8 Op:4;
     u8 Rs:3;
     u8 Rd:3;
-}
+};
 
 struct Thumb_BX{
     u8 eigen:6;
@@ -340,13 +355,13 @@ struct Thumb_BX{
     u8 H2:1;
     u8 Rs:3;
     u8 Rd:3;
-}
+};
 
 struct Thumb_PcLoad{
     u8 eigen:5;
     u8 Rd:3;
     u8 word:8;
-}
+};
 
 struct Thumb_LSReg{
     u8 eigen:4;
@@ -356,7 +371,7 @@ struct Thumb_LSReg{
     u8 Ro:3;
     u8 Rb:3;
     u8 Rd:3;
-}
+};
 
 struct Thumb_LSBH{
     u8 eigen:4;
@@ -366,7 +381,7 @@ struct Thumb_LSBH{
     u8 Ro:3;
     u8 Rb:3;
     u8 Rd:3;
-}
+};
 
 struct Thumb_LSImm{
     u8 eigen:3;
@@ -375,7 +390,7 @@ struct Thumb_LSImm{
     u8 Offset:5;
     u8 Rb:3;
     u8 Rd:3;
-}
+};
 
 struct Thumb_LSH{
     u8 eigen:4;
@@ -383,71 +398,61 @@ struct Thumb_LSH{
     u8 Offset:5;
     u8 Rb:3;
     u8 Rd:3;
-}
+};
 
 struct Thumb_SPLS{
     u8 eigen:4;
     u8 L:1;
     u8 Rd:3;
     u8 word:8;
-}
+};
 
 struct Thumb_LAddr{
     u8 eigen:4;
     u8 SP:1;
     u8 Rd:3;
     u8 word:8;
-}
+};
 
 struct Thumb_AddSP{
     u8 eigen:8;
     u8 S:1;
     u8 word:7;
-}
+};
 
-struct Thumb_LSReg{
+struct Thumb_PPReg{
     u8 eigen:4;
     u8 L:1;
     u8 eigen2:2;
     u8 R:1;
     u8 Rlist:8;
-}
+};
 
 struct Thumb_MulLS{
     u8 eigen:4;
     u8 L:1;
     u8 Rb:3;
     u8 Rlist:8;
-}
+};
 
 struct Thumb_CondB{
     u8 eigen:4;
     u8 cond:4;
     u8 SOffset:8;
-}
-
-struct Thumb_LSReg{
-    u8 eigen:4;
-    u8 L:1;
-    u8 B:1;
-    u8 eigen2:1;
-    u8 Ro:3;
-    u8 Rb:3;
-    u8 Rd:3;
-}
+};
 
 struct Thumb_SWI{
     u8 eigen:8;
     u8 value:8;
-}
+};
 
 struct Thumb_UcondB{
     u8 eigen:5;
     u16 Offset:11;
-}
+};
 
 struct Thumb_LongBL{
     u8 eigen:4;
     u8 H:1;
     u16 Offset:11;
-}
+};

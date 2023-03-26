@@ -1,4 +1,3 @@
-#include <string.h>
 int addr = 0;
 //return shift amount
 

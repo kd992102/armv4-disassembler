@@ -59,9 +59,79 @@ void ArmInstDec(u32 instruction){
         puts("Exception");
     }
 }
-/*
-void exe_inst(u32 instruction){
-    
-}
 
-*/
+void ThumbInstDec(u16 instruction){
+    if((instruction >> 15) & 0x1){
+        if((instruction >> 14) & 0x1){
+            //11
+            if((instruction & MulLS_eigen) == 0xc000){
+                ThumbMulLS(ThumbMulLSDec(instruction));
+            }
+            else if((instruction & CondB_eigen) == 0xd000){
+                ThumbCondB(ThumbCondBDec(instruction));
+            }
+            else if((instruction & SWI_eigen) == 0xdf00){
+                ThumbSWI(ThumbSWIDec(instruction));
+            }
+            else if((instruction & Uncond_eigen) == 0xe000){
+                ThumbUcond(ThumbUcondBDec(instruction));
+            }
+            else{
+                ThumbLongBL(ThumbLongBLDec(instruction));
+            }
+        }
+        else{
+            //10
+            if((instruction & LSH_eigen) == 0x8000){
+                ThumbLSH(ThumbLSHDec(instruction));
+            }
+            else if((instruction & SPLS_eigen) == 0x9000){
+                ThumbSPLS(ThumbSPLSDec(instruction));
+            }
+            else if((instruction & LAddr_eigen) == 0xa000){
+                ThumbLAddr(ThumbLAddrDec(instruction));
+            }
+            else if((instruction & AddSP_eigen) == 0xb000){
+                ThumbAddSP(ThumbAddSPDec(instruction));
+            }
+            else{
+                ThumbPPReg(ThumbPPRegDec(instruction));
+            }
+        }
+    }
+    else{
+        if((instruction >> 14) & 0x1){
+            //01
+            if((instruction & ALU_eigen) == 0x4000){
+                ThumbALU(ThumbALUDec(instruction));
+            }
+            else if((instruction & BranchEX_eigen) == 0x4400){
+                ThumbBX(ThumbBXDec(instruction));
+            }
+            else if((instruction & PCLoad_eigen) == 0x4800){
+                ThumbPCLoad(ThumbPCloadDec(instruction));
+            }
+            else if((instruction & LSReg_eigen) == 0x5000){
+                ThumbLSReg(ThumbLSRegDec(instruction));
+            }
+            else if((instruction & LSImm_eigen) == 0x5200){
+                ThumbLSBH(ThumbLSBHDec(instruction));
+            }
+            else{
+                ThumbLSImm(ThumbLSImmDec(instruction));
+            }
+        }
+        else{
+            //00
+            if((instruction & AddSub_eigen) == 0x1800){
+                ThumbAS(ThumbASDec(instruction));
+            }
+            else if((instruction & MoveShiftedReg_eigen) == 0x0){
+                ThumbMVReg(ThumbMVRegDec(instruction));
+            }
+            else{
+                ThumbImm(ThumbImmDec(instruction));
+            }
+        }
+    }
+}
