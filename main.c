@@ -8,10 +8,8 @@
 #include "thumb_instruction.h"
 #include "decode.h"
 
-//struct gba_rom *gba_rom;
 FILE *bios_bin;
 int main(int argc, char *argv[]){
-    //printf("%x\n", cpu.reg[13]);
     if(strncmp(argv[1],"-h",2) == 0){
         puts("armv4-disassembler");
         puts("------------------------------------------------------------------------------------------------------");
@@ -32,7 +30,6 @@ int main(int argc, char *argv[]){
     fseek(bios_bin, 0, SEEK_END);
     bios_size = ftell(bios_bin);
     printf("File size:%d\n", bios_size);
-    //printf("%s,%s,%s\n", argv[0], argv[1], argv[2]);
     fseek(bios_bin, 0, SEEK_SET);
     u8 arm_inst_buf[4];
     u8 thumb_inst_buf[2];
